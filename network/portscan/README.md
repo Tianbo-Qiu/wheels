@@ -472,12 +472,18 @@ ctx.Err()       // why it ended: nil (still running), Canceled, DeadlineExceeded
 ctx.Deadline()  // when it will end on its own, if ever
 ```
 
-**It ends in exactly two ways:**
+**It ends for one of three reasons:**
 
 ```go
-ctx, cancel := context.WithCancel(parent)     // someone calls cancel()  → Canceled
-ctx, cancel := context.WithTimeout(parent, d) // the clock runs out      → DeadlineExceeded
-                                              // ...or the parent ends   → parent's reason
+// 1. cancel() is called → Canceled
+ctx, cancel := context.WithCancel(parent)
+
+// 2. its own deadline passes → DeadlineExceeded
+ctx, cancel := context.WithTimeout(parent, 500*time.Millisecond)
+
+// 3. its parent ends → it ends too, with the parent's reason (any kind of context)
+//    parent cancelled (Ctrl-C)      → Canceled, even for a WithTimeout child
+//    parent's deadline (budget)     → DeadlineExceeded
 ```
 
 `signal.NotifyContext` is just `WithCancel` where the signal handler calls `cancel` for you.
