@@ -9,3 +9,4 @@ Reinventing wheels.
 | Wheel | What |
 |---|---|
 | [tcpecho](network/tcpecho) | TCP echo server and client |
+| [portscan](network/portscan) | TCP port scanner for a host or subnet |
