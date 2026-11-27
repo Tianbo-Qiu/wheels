@@ -12,3 +12,4 @@ Reinventing wheels.
 | [portscan](network/portscan) | TCP port scanner for a host or subnet |
 | [heartbeat](network/heartbeat) | PING/PONG heartbeat with read deadlines |
 | [readloop](network/readloop) | One big Write arrives as many Reads |
+| [scanwords](network/scanwords) | bufio.Scanner rebuilds words cut across Writes |
