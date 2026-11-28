@@ -62,7 +62,24 @@ for {
 
 ## Retry the connection, not the Write
 
-When a connection fails, throw it away and dial a new one. Retrying a `Write` on the same connection is the tempting alternative, and it's wrong for three reasons:
+When a connection fails, throw it away and dial a new one. The tempting alternative is to retry the `Write` on the same connection. You'll still find it in older Go code and tutorials:
+
+```go
+// DON'T: retry a Write on the same connection
+for i := 7; i > 0; i-- {
+	n, err = conn.Write([]byte("hello world"))
+	if err != nil {
+		if nErr, ok := err.(net.Error); ok && nErr.Temporary() { // deprecated
+			time.Sleep(10 * time.Second) // fixed wait, no backoff, no jitter
+			continue                     // resends ALL of the bytes
+		}
+		return err
+	}
+	break
+}
+```
+
+Every part of it is wrong:
 
 ```go
 n, err := conn.Write(buf)
@@ -74,7 +91,11 @@ n, err := conn.Write(buf)
 //    program sees an error, the retrying has already happened.
 ```
 
-**Don't use `net.Error`'s `Temporary()`.** It used to be the way to ask "is this worth retrying?", and it's now deprecated. `go doc net.Error`: *"Temporary errors are not well-defined. Most 'temporary' errors are timeouts, and the few exceptions are surprising. Do not use this method."* To detect a timeout from a deadline you set, use `errors.Is(err, os.ErrDeadlineExceeded)`.
+**4. Don't use `net.Error`'s `Temporary()`.** It used to be the way to ask "is this worth retrying?", and it's now deprecated. `go doc net.Error`: *"Temporary errors are not well-defined. Most 'temporary' errors are timeouts, and the few exceptions are surprising. Do not use this method."* To detect a timeout from a deadline you set, use `errors.Is(err, os.ErrDeadlineExceeded)`.
+
+**5. A fixed wait is the wrong shape.** Ten seconds every time is too long for a blip and too short for a real outage, and every client waits in lockstep. See backoff and jitter below.
+
+**What's worth keeping** is the idea behind it: retries need a limit and a wait between attempts. This wheel keeps both, but applies them to dialing a new connection instead of rewriting bytes on a dead one.
 
 **Resend a request only if doing it twice is safe.** Real clients retry a whole request on a new connection, but only when it's idempotent. Fetching data twice is fine; charging a card twice is not. This wheel only reads, so it doesn't have to decide.
 
