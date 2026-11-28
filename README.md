@@ -14,3 +14,4 @@ Reinventing wheels.
 | [readloop](network/readloop) | One big Write arrives as many Reads |
 | [scanwords](network/scanwords) | bufio.Scanner rebuilds words cut across Writes |
 | [tlv](network/tlv) | Type-length-value messages over TCP |
+| [reconnect](network/reconnect) | Reconnecting client with backoff and jitter |
